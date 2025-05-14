@@ -1,0 +1,126 @@
+services:
+  user-db:
+    image: mysql:8.0
+    container_name: user-db-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_user_data:/var/lib/mysql
+      - ./user-init-db:/docker-entrypoint-initdb.d:rw,z
+    deploy:
+      resources:
+        limits:
+          cpus: '0.3'
+          memory: 512M
+
+  user-manager-service:
+    build: ../users-manager
+    ports:
+      - "8090:8080"
+    environment:
+      RABBITMQ_HOST: "rabbitmq"
+      RABBITMQ_PORT: "5672"
+      DATASOURCE_URL: "jdbc:mysql://user-db:3306/users_manager?useSSL=false&serverTimezone=America/Sao_Paulo&allowPublicKeyRetrieval=true"
+      DATASOURCE_USERNAME: "root"
+      DATASOURCE_PASSWORD: "root"
+    depends_on:
+      - "rabbitmq"
+      - "user-db"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.3'
+          memory: 512M
+
+  account-db:
+    image: mysql:8.0
+    container_name: account-db-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_account_data:/var/lib/mysql
+      - ./account-init-db:/docker-entrypoint-initdb.d:rw,z
+    deploy:
+      resources:
+        limits:
+          cpus: '0.3'
+          memory: 512M
+
+  account-manager-service:
+    build: ../account-manager
+    ports:
+      - "8091:8080"
+    environment:
+      RABBITMQ_HOST: "rabbitmq"
+      RABBITMQ_PORT: "5672"
+      DATASOURCE_URL: "jdbc:mysql://account-db:3306/accounts_manager?useSSL=false&serverTimezone=America/Sao_Paulo&allowPublicKeyRetrieval=true"
+      DATASOURCE_USERNAME: "root"
+      DATASOURCE_PASSWORD: "root"
+    depends_on:
+      - "rabbitmq"
+      - "account-db"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.3'
+          memory: 512M
+
+  email-manager-service:
+    build: ../email-manager
+    ports:
+      - "8092:8080"
+    environment:
+      RABBITMQ_HOST: "rabbitmq"
+      RABBITMQ_PORT: "5672"
+      MAIL_HOST: "smtp.gmail.com"
+      MAIL_PORT: "587"
+      MAIL_USERNAME: "config@your.email"
+      MAIL_PASSWORD: "your.email.password"
+    depends_on:
+      - "rabbitmq"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.3'
+          memory: 512M
+
+  rabbitmq:
+    image: rabbitmq:3.12-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"    # Porta do RabbitMQ para comunicação entre aplicações
+      - "15672:15672"  # Porta da interface de gerenciamento web
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+  
+  
+volumes:
+  mysql_user_data:
+  mysql_account_data:
+  rabbitmq_data:
