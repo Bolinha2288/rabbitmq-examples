@@ -41,6 +41,6 @@ This project consists of multiple services (`email-manager`, `account-manager`, 
     - **User Manager:** http://localhost:8090/swagger-ui/index.html
 
 
-2. Checking a topic created, consumers created, and messages received in Apache Kafka:
+2. Checking a queues created, consumers created, and messages received in RabbitMQ:
 
-    - **Kafka UI:** http://localhost:8000
+    - **RabbitMQ:** http://localhost:15672/
